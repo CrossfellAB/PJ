@@ -8,7 +8,9 @@
     "dev": "nodemon server.js",
     "seed": "node scripts/seedDatabase.js",
     "test": "jest",
-    "check-db": "node scripts/checkConnection.js"
+    "check-db": "node scripts/checkConnection.js",
+    "start-mongo": "./scripts/startMongo.sh",
+    "stop-mongo": "./scripts/stopMongo.sh"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",

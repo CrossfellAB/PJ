@@ -26,9 +26,10 @@ app.get('/', (req, res) => {
 // API Routes
 app.use('/api/journeys', require('./routes/journeyRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/therapeutic-areas', require('./routes/therapeuticAreaRoutes'));
+app.use('/api/regions', require('./routes/regionRoutes'));
+app.use('/api/claude', require('./routes/claudeRoutes'));
 // These routes will be implemented next:
-// app.use('/api/therapeutic-areas', require('./routes/therapeuticAreaRoutes'));
-// app.use('/api/regions', require('./routes/regionRoutes'));
 // app.use('/api/barriers', require('./routes/barrierRoutes'));
 // app.use('/api/interventions', require('./routes/interventionRoutes'));
 // app.use('/api/scenarios', require('./routes/scenarioRoutes'));
