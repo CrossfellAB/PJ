@@ -1,57 +1,62 @@
 #!/bin/bash
 
-# Deployment script for GitHub Pages
+# Set error handling
+set -e
+
+# Configuration
+REPO_NAME="PJ"
+GH_PAGES_BRANCH="gh-pages"
+BUILD_DIR="build"
+
+# Ensure we're in the frontend directory
+cd "$(dirname "$0")"
 
 # Build the React application
 echo "Building the React application..."
 npm run build
 
 # Check if build folder exists
-if [ ! -d "build" ]; then
+if [ ! -d "$BUILD_DIR" ]; then
   echo "Error: build folder not found. Build process failed."
   exit 1
 fi
 
-# Create a temporary directory for deployment
-echo "Creating temporary directory for deployment..."
-TEMP_DIR=$(mktemp -d)
-cp -r build/* $TEMP_DIR/
+echo "Creating/updating gh-pages branch..."
 
-# Move to the temporary directory
+# Create a temporary directory
+TEMP_DIR=$(mktemp -d)
+cp -r $BUILD_DIR/* $TEMP_DIR/
+
+# Create a .nojekyll file to prevent GitHub from processing the site with Jekyll
+touch $TEMP_DIR/.nojekyll
+
+# Navigate to temp directory
 cd $TEMP_DIR
 
-# Initialize git repository
-echo "Initializing git repository..."
+# Initialize git and create commit
 git init
 git add .
+git config --local user.email "deployment@example.com"
+git config --local user.name "Deployment Script"
 git commit -m "Deploy to GitHub Pages"
 
-# Check if GitHub CLI is available
-if command -v gh &> /dev/null; then
-  echo "Using GitHub CLI for deployment..."
-  
-  # Create a new branch for gh-pages
-  git checkout -b gh-pages
-  
-  # Push to GitHub using GitHub CLI
-  echo "Pushing to GitHub Pages..."
-  gh repo set-default $(gh repo list --json nameWithOwner -q '.[0].nameWithOwner')
-  gh repo sync --force
-  git push --force origin gh-pages
-else
-  echo "GitHub CLI not found. Using git push..."
-  
-  # Add remote repository (user will need to provide the URL)
-  echo "Enter your GitHub repository URL (e.g., https://github.com/username/repo.git):"
+# Get the repository URL from the parent git repository
+cd -
+cd ..
+REPO_URL=$(git remote get-url origin)
+if [ -z "$REPO_URL" ]; then
+  echo "Error: Could not get repository URL. Please enter it manually:"
   read REPO_URL
-  
-  git remote add origin $REPO_URL
-  git checkout -b gh-pages
-  git push --force origin gh-pages
 fi
 
-echo "Deployment completed!"
-echo "Your application should be available at: https://[username].github.io/[repository-name]/"
+# Push to GitHub Pages
+cd $TEMP_DIR
+git remote add origin $REPO_URL
+git checkout -b $GH_PAGES_BRANCH
+git push -f origin $GH_PAGES_BRANCH
+
+echo "Deployment completed successfully!"
+echo "Your site should be available at: https://[username].github.io/$REPO_NAME/"
 
 # Clean up
 rm -rf $TEMP_DIR
