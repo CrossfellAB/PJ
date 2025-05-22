@@ -63,7 +63,7 @@ MONGO_URI=mongodb+srv://your_username:your_password@cluster0.xxxxx.mongodb.net/p
 Run the connection test script:
 
 ```
-cd "/Users/matsfogelkvist/PJ Dev/PJ" && npm run check-db
+
 ```
 
 If successful, you should see "MongoDB Connected Successfully!" in the output.
@@ -73,13 +73,13 @@ If successful, you should see "MongoDB Connected Successfully!" in the output.
 After confirming the connection works, seed the database with initial data:
 
 ```
-cd "/Users/matsfogelkvist/PJ Dev/PJ" && npm run seed
+
 ```
 
 ## 9. Start the Development Server
 
 ```
-cd "/Users/matsfogelkvist/PJ Dev/PJ" && npm run dev
+
 ```
 
 The API will be available at `http://localhost:5000`.
