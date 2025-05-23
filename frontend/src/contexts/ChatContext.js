@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
+import claudeService from '../services/claude';
 
 const ChatContext = createContext();
 
@@ -16,6 +17,7 @@ export const ChatProvider = ({ children }) => {
     additionalCriteria: ''
   });
   const [currentStep, setCurrentStep] = useState(1);
+  const [context, setContext] = useState({});
 
   const sendMessage = async (message) => {
     if (!message.trim()) return;
@@ -32,50 +34,30 @@ export const ChatProvider = ({ children }) => {
     setIsLoading(true);
     
     try {
-      // In a real implementation, this would call the backend API to interact with Claude
-      // For now, we'll simulate a response
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call the Claude API service with the current context
+      const response = await claudeService.sendMessage(message, context);
       
-      let responseContent = '';
+      // Extract the response and updated context
+      const { message: responseContent, updatedContext } = response;
       
-      // Process user input based on current step
-      if (currentStep === 1) {
-        // Detect therapeutic area and region
-        const userMessage = message.toLowerCase();
-        if (userMessage.includes('diabetes') || userMessage.includes('obesity')) {
-          const therapeuticArea = userMessage.includes('diabetes') ? 'Type 2 Diabetes' : 'Obesity';
-          let region = 'Unknown';
-          
-          if (userMessage.includes('uk') || userMessage.includes('united kingdom')) {
-            region = 'United Kingdom';
-          } else if (userMessage.includes('us') || userMessage.includes('united states')) {
-            region = 'United States';
-          }
-          
-          setJourneyData(prev => ({
-            ...prev,
-            therapeuticArea,
-            region
-          }));
-          
-          responseContent = `Great! I understand you want to explore the patient journey for ${therapeuticArea} in ${region}. Would you like to provide any additional criteria or specific focus areas for this patient journey?`;
-          setCurrentStep(2);
-        } else {
-          responseContent = "I'm not sure I understood the therapeutic area and region you're interested in. Could you please specify a therapeutic area (e.g., 'Type 2 Diabetes', 'Obesity') and a region (e.g., 'United Kingdom', 'United States')?";
-        }
-      } else if (currentStep === 2) {
-        // Process additional criteria
+      // Update context with the response
+      setContext(updatedContext);
+      
+      // Update journey data if present in context
+      if (updatedContext.therapeuticArea && updatedContext.region) {
         setJourneyData(prev => ({
           ...prev,
-          additionalCriteria: message
+          therapeuticArea: updatedContext.therapeuticArea,
+          region: updatedContext.region,
+          additionalCriteria: updatedContext.additionalCriteria || ''
         }));
         
-        responseContent = `Thank you for providing that information. I'll now research the patient journey for ${journeyData.therapeuticArea} in ${journeyData.region}, focusing on ${message || 'standard pathways'}. This will take a moment as I gather and analyze relevant information.`;
-        setCurrentStep(3);
-        
-        // In a real implementation, we would trigger the research process here
-      } else if (currentStep === 3) {
-        responseContent = "I'm still gathering information about the patient journey. Would you like to see what I've found so far, or would you prefer to wait until I have completed my research?";
+        // Update step based on context
+        if (updatedContext.step === 'criteria') {
+          setCurrentStep(2);
+        } else if (updatedContext.step === 'research') {
+          setCurrentStep(3);
+        }
       }
       
       // Add assistant response
@@ -101,6 +83,42 @@ export const ChatProvider = ({ children }) => {
       setIsLoading(false);
     }
   };
+  
+  const startResearch = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Use journey data to start the research process
+      const researchData = await claudeService.searchAndAnalyze(journeyData);
+      
+      // Here you would typically store the research data and handle the UI update
+      // For now, we'll just log it
+      console.log('Research completed:', researchData);
+      
+      return researchData;
+    } catch (error) {
+      console.error("Error starting research:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const generateVisualization = async (data) => {
+    try {
+      setIsLoading(true);
+      
+      // Generate visualization using the journey data
+      const visualizationResult = await claudeService.generateJourneyVisualization(data);
+      
+      return visualizationResult;
+    } catch (error) {
+      console.error("Error generating visualization:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const resetChat = () => {
     setMessages([
@@ -113,6 +131,7 @@ export const ChatProvider = ({ children }) => {
       additionalCriteria: ''
     });
     setCurrentStep(1);
+    setContext({});
   };
 
   return (
@@ -121,6 +140,8 @@ export const ChatProvider = ({ children }) => {
       userInput,
       setUserInput,
       sendMessage,
+      startResearch,
+      generateVisualization,
       isLoading,
       journeyData,
       currentStep,
